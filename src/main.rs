@@ -1,22 +1,37 @@
+use agimo::{CliArgs, Interceptor};
 use clap::Parser;
-use agimo::{Config, Interceptor};
-use pingora::{proxy::http_proxy_service_with_name, server::Server, services::listening::Service};
+use config::Config;
+use pingora::{
+    proxy::http_proxy_service_with_name,
+    server::{self, Server},
+    services::listening::Service,
+};
 
 fn main() -> anyhow::Result<()> {
-    let config = Config::parse();
-    let mut server = Server::new(None)?;
+    let args = CliArgs::parse();
+    let mut server = Server::new(Some(server::configuration::Opt {
+        upgrade: args.upgrade,
+        ..Default::default()
+    }))?;
+    let services = parse_services(&args.conf)?;
     let mut interceptor = http_proxy_service_with_name(
         &server.configuration,
-        Interceptor::new(&config.prometheus.endpoint, &config.services)?,
+        Interceptor::new(&args.prometheus.address, services)?,
         "Interceptor",
     );
-    interceptor.add_tcp(format!("0.0.0.0:{}", &config.port).as_str());
+    interceptor.add_tcp(format!("0.0.0.0:{}", &args.port).as_str());
     server.add_service(interceptor);
     #[cfg(feature = "prometheus")]
     {
         let mut prom = Service::prometheus_http_service();
-        prom.add_tcp("0.0.0.0:9090");
+        prom.add_tcp(format!("0.0.0.0:{}", &args.prometheus.exporter_port).as_str());
         server.add_service(prom);
     }
     server.run_forever();
+}
+
+fn parse_services(path: &str) -> anyhow::Result<Config> {
+    let content = std::fs::read_to_string(path)?;
+    let services: Config = toml::from_str(&content)?;
+    Ok(services)
 }

@@ -1,4 +1,5 @@
-use crate::service::ServiceType;
+use config::ServiceType;
+
 
 pub(crate) type Result<T> = std::result::Result<T, Error>;
 
@@ -10,9 +11,9 @@ pub(crate) struct Queryer {
 
 impl Queryer {
     #[cfg(feature = "prometheus")]
-    pub fn new(prometheus_endpoint: &str) -> Self {
+    pub fn new(prometheus_address: &str) -> Self {
         Self {
-            prometheus_endpoint: prometheus_endpoint.to_owned(),
+            prometheus_endpoint: format!("{}/api/v1/query", prometheus_address),
             client: reqwest::Client::new(),
         }
     }

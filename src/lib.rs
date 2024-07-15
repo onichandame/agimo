@@ -1,7 +1,6 @@
-mod config;
+mod args;
 mod interceptor;
 mod queryer;
-mod service;
 
-pub use config::Config;
+pub use args::CliArgs;
 pub use interceptor::Interceptor;

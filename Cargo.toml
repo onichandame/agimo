@@ -7,6 +7,7 @@ edition = "2021"
 anyhow = "1.0.86"
 async-trait = "0.1.81"
 clap = { version = "4.5.9", features = ["derive"] }
+config = { version = "0.1.0", path = "config" }
 duration-string = { version = "0.4.0", features = ["serde"] }
 pingora = { version = "0.2.0", features = ["proxy"] }
 pingora-error = "0.2.0"
@@ -21,3 +22,6 @@ toml = "0.8.14"
 default = ["prometheus"]
 prometheus = ["dep:prometheus", "serde_json"]
 serde_json = ["dep:serde_json"]
+
+[workspace]
+members = ["config"]

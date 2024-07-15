@@ -37,7 +37,12 @@ triggers:
   metadata:
     # Required fields:
     serverAddress: http://<prometheus-host>:9090
-    query: max_over_time(requests_total{host="example.com"}[30s]) # Note: query must return a vector/scalar single element response
+    # Sum up the rate of increase of incoming requests in the last 30 seconds and ongoing requests(WebSocket)
+    query: |
+      sum by (host) (rate(agimo_requests_total{host="example.com"}[30s]))
+    +
+      sum by (host) (agimo_active_requests{host="example.com"})    
+    # scale up when the metric above exceeds 100 per replica
     threshold: '100'
     # Optional fields:
     namespace: example-namespace  # for namespaced queries, eg. Thanos
