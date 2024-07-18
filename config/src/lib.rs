@@ -9,7 +9,7 @@ pub struct Config {
     /// How long to wait for upstream service to be ready
     ///
     /// default: 30s
-    #[serde(default = "default_timeout", )]
+    #[serde(default = "default_timeout")]
     pub timeout: DurationString,
 }
 

@@ -19,32 +19,32 @@ So here is the plan:
 4. wait for the upstream server to be up running
 5. pass through the request to the upstream server
 
-So how does the upstream server know when to scale up? KEDA come into play. Don't make it wrong, it's only the KEDA core that is needed, not the immature KEDA HTTP add on.
-
-When the requests comes in, agimo reports the metrics to the prometheus store. KEDA has a battle-tested prometheus scaler which can be used to scale the upstream service based on custom prometheus metrics.
+So how does the upstream server know when to scale up? Any scaler that works with prometheus metrics will do, like KEDA core, or you may prefer a vanilla HPA.
 
 The reported metrics are as follows:
 
-- *requests_total { host = "example.com" }*: the total number of requests for a host
-- *pending_requests_total { host = "example.com" }*: the number of pending requests(waiting for the upstream) for a host
-- *active_requests_total { host = "example.com" }*: the number of active requests(passed to the upstream) for a host
+- *agimo_requests_total { host = "example.com" }*: (COUNTER)the total number of requests for a host
+- *agimo_pending_requests { host = "example.com" }*: (GAUGE)the number of pending requests(waiting for the upstream) for a host
+- *agimo_active_requests { host = "example.com" }*: (GAUGE)the number of active requests(passed to the upstream) for a host
 
-An example scaler definition will be:
+# Usage
 
-```yaml
-triggers:
-- type: prometheus
-  metadata:
-    # Required fields:
-    serverAddress: http://<prometheus-host>:9090
-    # Sum up the rate of increase of incoming requests in the last 30 seconds and ongoing requests(WebSocket)
-    query: |
-      sum by (host) (rate(agimo_requests_total{host="example.com"}[30s]))
-    +
-      sum by (host) (agimo_active_requests{host="example.com"})    
-    # scale up when the metric above exceeds 100 per replica
-    threshold: '100'
-    # Optional fields:
-    namespace: example-namespace  # for namespaced queries, eg. Thanos
-    ignoreNullValues: false # Default is `true`, which means ignoring the empty value list from Prometheus. Set to `false` the scaler will return error when Prometheus target is lost
+```bash
+# Example command
+agimo --prometheus-address http://prometheus --conf ./config.toml
+```
+
+An example config will be:
+
+```toml
+# the default timeout waiting for the upstream to scale up from zero
+timeout = '5s'
+
+[[services]]
+host = "example.com"
+type = "deploy" # "deployment" | "statefulset" | "deploy" | "sts"
+namespace = "default"
+name = "example"
+service_name = "example"
+service_port = 80
 ```

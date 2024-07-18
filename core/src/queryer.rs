@@ -1,6 +1,5 @@
 use config::ServiceType;
 
-
 pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 pub(crate) struct Queryer {
@@ -55,18 +54,18 @@ impl Queryer {
             .and_then(|v| v.get(1))
             .and_then(|v| v.as_str())
             .and_then(|v| v.parse::<u64>().ok())
-            .ok_or(Error::UnknownError("Value invalid".to_owned()))?;
+            .ok_or(Error::MetricInvalid)?;
         Ok(val)
     }
 }
 
 #[derive(thiserror::Error, Debug)]
 #[allow(clippy::enum_variant_names)]
-pub(crate) enum Error {
+pub enum Error {
     #[error("Query fail: {code} {msg}")]
     HTTPError { code: u16, msg: String },
     #[error("Query fail: {0}")]
     QueryError(#[from] reqwest::Error),
-    #[error("Unknown error: {0}")]
-    UnknownError(String),
+    #[error("Metric invalid")]
+    MetricInvalid,
 }

@@ -2,26 +2,19 @@
 name = "agimo"
 version = "0.1.0"
 edition = "2021"
+type = ["bin"]
+
+[workspace]
+members = ["config", "core"]
 
 [dependencies]
+agimo_core = { version = "0.1.0", path = "core" }
 anyhow = "1.0.86"
-async-trait = "0.1.81"
-clap = { version = "4.5.9", features = ["derive"] }
+clap = { version = "4.5.9", features = ["derive", "env"] }
 config = { version = "0.1.0", path = "config" }
-duration-string = { version = "0.4.0", features = ["serde"] }
 pingora = { version = "0.2.0", features = ["proxy"] }
-pingora-error = "0.2.0"
-prometheus = { version = "0.13.4", optional = true, features = ["push"] }
-reqwest = { version = "0.12.5", features = ["json"] }
-serde = { version = "1.0.204", features = ["derive"] }
-serde_json = { version = "1.0.120", optional = true }
-thiserror = "1.0.61"
 toml = "0.8.14"
 
 [features]
 default = ["prometheus"]
-prometheus = ["dep:prometheus", "serde_json"]
-serde_json = ["dep:serde_json"]
-
-[workspace]
-members = ["config"]
+prometheus = ["agimo_core/prometheus"]

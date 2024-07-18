@@ -1,18 +1,14 @@
-use agimo::{CliArgs, Interceptor};
+use agimo_core::Interceptor;
+use args::CliArgs;
 use clap::Parser;
 use config::Config;
-use pingora::{
-    proxy::http_proxy_service_with_name,
-    server::{self, Server},
-    services::listening::Service,
-};
+use pingora::{proxy::http_proxy_service_with_name, server::Server, services::listening::Service};
+
+mod args;
 
 fn main() -> anyhow::Result<()> {
     let args = CliArgs::parse();
-    let mut server = Server::new(Some(server::configuration::Opt {
-        upgrade: args.upgrade,
-        ..Default::default()
-    }))?;
+    let mut server = Server::new(None)?;
     let services = parse_services(&args.conf)?;
     let mut interceptor = http_proxy_service_with_name(
         &server.configuration,

@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use config::{Service, Config};
+use config::{Config, Service};
 use pingora::{
     prelude::fast_timeout::{fast_sleep, fast_timeout},
     protocols::Digest,
@@ -10,7 +10,7 @@ use prometheus::IntCounterVec;
 #[cfg(feature = "prometheus")]
 use prometheus::IntGaugeVec;
 
-use crate::queryer::Queryer;
+use crate::queryer::{self, Queryer};
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -31,9 +31,11 @@ impl Interceptor {
     #[cfg(feature = "prometheus")]
     pub fn new(prometheus_endpoint: &str, services: Config) -> Result<Self> {
         use prometheus::{opts, register_int_counter_vec, register_int_gauge_vec};
-        let pending_gauge =
-            register_int_gauge_vec!(opts!("agimo_pending_requests", "pending requests"), &["host"])
-                .unwrap();
+        let pending_gauge = register_int_gauge_vec!(
+            opts!("agimo_pending_requests", "pending requests"),
+            &["host"]
+        )
+        .unwrap();
         let active_gauge =
             register_int_gauge_vec!(opts!("agimo_active_requests", "active requests"), &["host"])
                 .unwrap();
@@ -52,7 +54,6 @@ impl Interceptor {
             services,
         })
     }
-
 }
 
 #[async_trait]
@@ -88,23 +89,18 @@ impl ProxyHttp for Interceptor {
         self.total_counter.with_label_values(&[host]).inc();
         let timeout = &service.timeout.unwrap_or(self.services.timeout);
         let Ok(_) = fast_timeout(*timeout.to_owned(), async {
-            loop {
-                let ready = match self
+            'LOOP: loop {
+                let ready = self
                     .queryer
                     .query(&service.ty, &service.namespace, &service.name)
                     .await
-                {
-                    Ok(ready) => ready,
-                    Err(_err) => {
-                        fast_sleep(std::time::Duration::from_millis(1000)).await;
-                        continue;
-                    }
-                };
+                    .map_err(Into::<Error>::into)?;
                 if ready > 0 {
-                    break;
-                }
-                fast_sleep(std::time::Duration::from_millis(1000)).await;
+                    break 'LOOP;
+                };
+                fast_sleep(std::time::Duration::from_secs(1)).await;
             }
+            Ok::<(), Error>(())
         })
         .await
         else {
@@ -184,8 +180,8 @@ pub enum Error {
     ServiceNotReady { host: String, reason: String },
     #[error("Read services error:  {0}")]
     ReadServicesError(#[from] std::io::Error),
-    #[error("Parse services error:  {0}")]
-    ParseServicesError(#[from] toml::de::Error),
+    #[error("Query error:  {0}")]
+    QueryError(#[from] queryer::Error),
 }
 
 impl From<Error> for pingora::BError {
