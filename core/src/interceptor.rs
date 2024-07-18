@@ -150,6 +150,7 @@ impl ProxyHttp for Interceptor {
         };
         ctx.active = true;
         self.active_gauge.with_label_values(&[&service.host]).inc();
+        self.pending_gauge.with_label_values(&[&service.host]).dec();
         Ok(())
     }
 
@@ -162,7 +163,6 @@ impl ProxyHttp for Interceptor {
         let Some(service) = &ctx.service else {
             return;
         };
-        self.pending_gauge.with_label_values(&[&service.host]).dec();
         if ctx.active {
             self.active_gauge.with_label_values(&[&service.host]).dec();
         }
