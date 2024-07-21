@@ -29,6 +29,17 @@ The reported metrics are as follows:
 
 # Usage
 
+## Helm
+
+```bash
+helm repo add agimo https://onichandame.github.io/agimo
+helm install agimo agimo/agimo
+```
+
+## Manual(kubernetes)
+
+## Manual(local)
+
 ```bash
 # Example command
 agimo --prometheus-address http://prometheus --conf ./config.toml
