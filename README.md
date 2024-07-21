@@ -29,14 +29,85 @@ The reported metrics are as follows:
 
 # Usage
 
-## Helm
+## Helm(Recommended)
 
 ```bash
 helm repo add agimo https://onichandame.github.io/agimo
 helm install agimo agimo/agimo
 ```
 
-## Manual(kubernetes)
+## Kubernetes manifests
+
+<details>
+<summary>Expand</summary>
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: agimo
+spec:
+  selector:
+    app: agimo
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agimo-conf
+data:
+  config.toml: |
+    timeout = 30s # default timeout for services to be ready
+    [[services]]
+    host = example.com
+    type = deployment
+    namespace = example
+    name = example
+    service_name = example
+    service_port = 80
+    timeout = 5s # timeout request after 5s while waiting for the service to be ready
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agimo
+spec:
+  selector:
+    matchLabels:
+      app: agimo
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: agimo
+    spec:
+      containers:
+      - name: agimo
+        image: onichandame/agimo:latest
+        command: ["agimo"]
+        args:
+          - "--prometheus-address"
+          - "http://prometheus-server.prometheus"
+          - "--conf"
+          - "/etc/agimo/config.toml"
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: prometheus
+        volumeMounts:
+          - name: agimo-conf
+            mountPath: /etc/agimo
+      volumes:
+        - name: agimo-conf
+          configMap:
+            name: agimo-conf
+```
+</details>
 
 ## Manual(local)
 

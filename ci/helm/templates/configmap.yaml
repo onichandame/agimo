@@ -1,0 +1,11 @@
+{{- if .Values.config -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "agimo.fullname" . }}
+  labels:
+    {{- include "agimo.labels" . | nindent 4 }}
+data:
+  config.toml: |
+    {{ .Values.config | indent 4 }}
+{{- end }}
