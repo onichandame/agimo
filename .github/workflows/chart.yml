@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - master
+    paths:
+      - ci/helm/**
+      - .github/workflows/chart.yml
 jobs:
   build:
     runs-on: ubuntu-latest
