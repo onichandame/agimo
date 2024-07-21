@@ -6,4 +6,4 @@ metadata:
     {{- include "agimo.labels" . | nindent 4 }}
 data:
   config.toml: |
-    {{ .Values.config | indent 4 }}
+    {{ .Values.config | nindent 4 }}
