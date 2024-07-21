@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  agimo:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2024-07-21T18:41:22.585539527Z"
+    description: Scale-to-Zero for Kubernetes
+    digest: 7cdc655ae1be53aac3c42c8afbcbca984890388865454a131196a35354bfa243
+    name: agimo
+    type: application
+    urls:
+    - https://github.com/onichandame/agimo/releases/download/agimo-0.1.0/agimo-0.1.0.tgz
+    version: 0.1.0
+generated: "2024-07-21T18:41:22.585548494Z"
