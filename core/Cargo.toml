@@ -7,10 +7,10 @@ edition = "2021"
 async-trait = "0.1.81"
 config = { version = "0.1.0", path = "../config" }
 duration-string = { version = "0.4.0", features = ["serde"] }
-pingora = { version = "0.2.0", features = ["proxy"], default-features = false }
+pingora = { version = "0.2.0", features = ["proxy"] }
 pingora-error = "0.2.0"
-prometheus = { version = "0.13.4", optional = true, features = ["push"] }
-reqwest = { version = "0.12.5", features = ["json"] }
+prometheus = { version = "0.13.4", optional = true }
+reqwest = { version = "0.12.5", features = ["charset", "http2", "json"], default-features = false }
 serde = { version = "1.0.204", features = ["derive"] }
 serde_json = { version = "1.0.120", optional = true }
 thiserror = "1.0.61"

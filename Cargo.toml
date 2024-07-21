@@ -12,7 +12,7 @@ agimo_core = { version = "0.1.0", path = "core" }
 anyhow = "1.0.86"
 clap = { version = "4.5.9", features = ["derive", "env"] }
 config = { version = "0.1.0", path = "config" }
-pingora = { version = "0.2.0", features = ["proxy"], default-features = false }
+pingora = { version = "0.2.0", features = ["proxy"] }
 toml = "0.8.14"
 
 [features]
