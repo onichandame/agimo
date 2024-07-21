@@ -1,7 +1,7 @@
 ARG OS_CODENAME=bookworm
 # Build stage
 FROM rust:slim-${OS_CODENAME} AS builder
-RUN apt update -y && apt install -y libssl-dev pkg-config
+RUN apt update -y && apt install -y libssl-dev pkg-config perl
 COPY . /app
 WORKDIR /app
 ENV OPENSSL_STATIC=1
