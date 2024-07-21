@@ -7,7 +7,7 @@ edition = "2021"
 async-trait = "0.1.81"
 config = { version = "0.1.0", path = "../config" }
 duration-string = { version = "0.4.0", features = ["serde"] }
-pingora = { version = "0.2.0", features = ["proxy"] }
+pingora = { version = "0.2.0", features = ["proxy"], default-features = false }
 pingora-error = "0.2.0"
 prometheus = { version = "0.13.4", optional = true, features = ["push"] }
 reqwest = { version = "0.12.5", features = ["json"] }
