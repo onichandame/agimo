@@ -29,6 +29,9 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
+prometheus:
+  address: '' # Address of the prometheus server. e.g. http://prometheus-server
+
 config: '' # Must be string
   # See README for examples
 

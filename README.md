@@ -32,7 +32,7 @@ The reported metrics are as follows:
 ## Helm(Recommended)
 
 ```bash
-helm repo add agimo https://onichandame.github.io/agimo
+helm repo add agimo https://agimo.onichandame.com
 helm install agimo agimo/agimo
 ```
 
