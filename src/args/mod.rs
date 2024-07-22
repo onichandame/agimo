@@ -1,6 +1,7 @@
 use clap::{Args, Parser};
 
 #[derive(Clone, Debug, Parser)]
+#[command(author, version, about, long_about)]
 pub struct CliArgs {
     #[cfg(feature = "prometheus")]
     #[command(flatten)]

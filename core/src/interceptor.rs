@@ -126,7 +126,10 @@ impl ProxyHttp for Interceptor {
             .into());
         };
         let peer = Box::new(HttpPeer::new(
-            format!("{}:{}", service.service_name, service.service_port),
+            format!(
+                "{}.{}:{}",
+                service.service_name, service.namespace, service.service_port
+            ),
             false,
             "".to_owned(),
         ));
