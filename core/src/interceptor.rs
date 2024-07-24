@@ -2,27 +2,20 @@ use async_trait::async_trait;
 use config::{Config, Service};
 use pingora::{
     prelude::fast_timeout::{fast_sleep, fast_timeout},
-    protocols::Digest,
     proxy::{ProxyHttp, Session},
     upstreams::peer::HttpPeer,
 };
 use prometheus::IntCounterVec;
-#[cfg(feature = "prometheus")]
-use prometheus::IntGaugeVec;
 
 use crate::queryer::{self, Queryer};
 
 type Result<T> = std::result::Result<T, Error>;
 
 pub struct Interceptor {
-    /// total number of pending requests labeled by host
-    #[cfg(feature = "prometheus")]
-    pending_gauge: IntGaugeVec,
-    /// total number of active requests labeled by host
-    #[cfg(feature = "prometheus")]
-    active_gauge: IntGaugeVec,
     #[cfg(feature = "prometheus")]
     total_counter: IntCounterVec,
+    #[cfg(feature = "prometheus")]
+    closed_counter: IntCounterVec,
     queryer: Queryer,
     services: Config,
 }
@@ -30,26 +23,20 @@ pub struct Interceptor {
 impl Interceptor {
     #[cfg(feature = "prometheus")]
     pub fn new(prometheus_endpoint: &str, services: Config) -> Result<Self> {
-        use prometheus::{opts, register_int_counter_vec, register_int_gauge_vec};
-        let pending_gauge = register_int_gauge_vec!(
-            opts!("agimo_pending_requests", "pending requests"),
-            &["host"]
-        )
-        .unwrap();
-        let active_gauge =
-            register_int_gauge_vec!(opts!("agimo_active_requests", "active requests"), &["host"])
-                .unwrap();
+        use prometheus::{opts, register_int_counter_vec};
         let total_counter =
             register_int_counter_vec!(opts!("agimo_requests_total", "total requests"), &["host"])
+                .unwrap();
+        let closed_counter =
+            register_int_counter_vec!(opts!("agimo_requests_closed", "total requests"), &["host"])
                 .unwrap();
         let queryer = {
             #[cfg(feature = "prometheus")]
             Queryer::new(prometheus_endpoint)
         };
         Ok(Self {
-            pending_gauge,
-            active_gauge,
             total_counter,
+            closed_counter,
             queryer,
             services,
         })
@@ -85,7 +72,6 @@ impl ProxyHttp for Interceptor {
             .into());
         };
         ctx.service = Some(service.to_owned());
-        self.pending_gauge.with_label_values(&[host]).inc();
         self.total_counter.with_label_values(&[host]).inc();
         let timeout = &service.timeout.unwrap_or(self.services.timeout);
         let Ok(_) = fast_timeout(*timeout.to_owned(), async {
@@ -136,27 +122,6 @@ impl ProxyHttp for Interceptor {
         Ok(peer)
     }
 
-    async fn connected_to_upstream(
-        &self,
-        _session: &mut Session,
-        _reused: bool,
-        _peer: &HttpPeer,
-        _fd: std::os::unix::io::RawFd,
-        _digest: Option<&Digest>,
-        ctx: &mut Self::CTX,
-    ) -> pingora::Result<()> {
-        let Some(service) = &ctx.service else {
-            return Err(Error::ServiceNotFound {
-                host: "".to_owned(),
-            }
-            .into());
-        };
-        ctx.active = true;
-        self.active_gauge.with_label_values(&[&service.host]).inc();
-        self.pending_gauge.with_label_values(&[&service.host]).dec();
-        Ok(())
-    }
-
     async fn logging(
         &self,
         _session: &mut Session,
@@ -166,9 +131,9 @@ impl ProxyHttp for Interceptor {
         let Some(service) = &ctx.service else {
             return;
         };
-        if ctx.active {
-            self.active_gauge.with_label_values(&[&service.host]).dec();
-        }
+        self.closed_counter
+            .with_label_values(&[&service.host])
+            .inc();
     }
 }
 
@@ -202,5 +167,4 @@ impl From<Error> for pingora::BError {
 #[derive(Clone, Debug, Default)]
 pub struct Context {
     service: Option<Service>,
-    active: bool,
 }

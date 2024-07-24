@@ -24,8 +24,7 @@ So how does the upstream server know when to scale up? Any scaler that works wit
 The reported metrics are as follows:
 
 - *agimo_requests_total { host = "example.com" }*: (COUNTER)the total number of requests for a host
-- *agimo_pending_requests { host = "example.com" }*: (GAUGE)the number of pending requests(waiting for the upstream) for a host
-- *agimo_active_requests { host = "example.com" }*: (GAUGE)the number of active requests(passed to the upstream) for a host
+- *agimo_requests_closed { host = "example.com" }*: (GAUGE)the number of closed requests(waiting for the upstream) for a host
 
 # Usage
 
@@ -36,78 +35,31 @@ helm repo add agimo https://agimo.onichandame.com
 helm install agimo agimo/agimo
 ```
 
-## Kubernetes manifests
-
 <details>
-<summary>Expand</summary>
+<summary>Expand example values</summary>
 
 ```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: agimo
-spec:
-  selector:
-    app: agimo
-  ports:
-  - name: http
-    port: 80
-    targetPort: http
-  type: ClusterIP
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: agimo-conf
-data:
-  config.toml: |
-    timeout = 30s # default timeout for services to be ready
-    [[services]]
-    host = example.com
-    type = deployment
-    namespace = example
-    name = example
-    service_name = example
-    service_port = 80
-    timeout = 5s # timeout request after 5s while waiting for the service to be ready
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: agimo
-spec:
-  selector:
-    matchLabels:
-      app: agimo
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: agimo
-    spec:
-      containers:
-      - name: agimo
-        image: onichandame/agimo:latest
-        command: ["agimo"]
-        args:
-          - "--prometheus-address"
-          - "http://prometheus-server.prometheus"
-          - "--conf"
-          - "/etc/agimo/config.toml"
-        ports:
-        - containerPort: 8080
-          name: http
-        - containerPort: 9090
-          name: prometheus
-        volumeMounts:
-          - name: agimo-conf
-            mountPath: /etc/agimo
-      volumes:
-        - name: agimo-conf
-          configMap:
-            name: agimo-conf
+config: |
+  timeout = '30s'
+  [[services]]
+  host = 'example.com'
+  type = 'deployment'
+  namespace = 'example'
+  name = 'example'
+  service_name = 'example'
+  service_port = 80
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/scheme: "http"
+  prometheus.io/path: "/"
+  prometheus.io/port: "9090"
+prometheus:
+  address: http://prometheus-server.prometheus.svc.cluster.local
 ```
+
 </details>
+
+The prometheus annotations are required in order for prometheus scraper to find the agimo pods. It is recommended to set the scrape interval shorter(which is default to 1m) like 5s or so.
 
 ## Manual(local)
 
