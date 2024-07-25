@@ -26,7 +26,7 @@ The reported metrics are as follows:
 - *agimo_requests_total { host = "example.com" }*: (COUNTER)the total number of requests for a host
 - *agimo_active_requests { host = "example.com" }*: (GAUGE)the number of active requests(waiting for the upstream) for a host
 
-# Usage
+# Installation
 
 ## Helm(Recommended)
 
@@ -59,7 +59,7 @@ prometheus:
 
 </details>
 
-The prometheus annotations are required in order for prometheus scraper to find the agimo pods. It is recommended to set the scrape interval shorter(which is default to 1m) like 5s or so.
+The prometheus annotations are required in order for prometheus scraper to find the agimo pods. **It is recommended to set the scrape interval shorter than default(1m), like 5s or so.**
 
 ## Manual(local)
 
@@ -82,3 +82,36 @@ name = "example"
 service_name = "example"
 service_port = 80
 ```
+
+# Usage
+
+## KEDA
+
+<details>
+<summary>Expand example ScaledObject</summary>
+
+```yaml
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: example
+  namespace: example
+spec:
+  cooldownPeriod: 30
+  maxReplicaCount: 1 # scale up when there are requests
+  minReplicaCount: 0 # scale to zero when there are no requests
+  pollingInterval: 2
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: example
+  triggers:
+  - metadata:
+      # use the rate of requests in the last 1m and the number of active requests(waiting for the upstream/Websocket/SSE) as the metric for scaling.
+      query: sum by (host) ((rate(agimo_requests_total{host="example.com"}[1m])) + (agimo_active_requests{host="example.com"}))
+      serverAddress: http://prometheus-server.prometheus.svc.cluster.local
+      threshold: "1000"
+    type: prometheus
+```
+
+</details>
