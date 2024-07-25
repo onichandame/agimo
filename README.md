@@ -24,7 +24,7 @@ So how does the upstream server know when to scale up? Any scaler that works wit
 The reported metrics are as follows:
 
 - *agimo_requests_total { host = "example.com" }*: (COUNTER)the total number of requests for a host
-- *agimo_requests_closed { host = "example.com" }*: (GAUGE)the number of closed requests(waiting for the upstream) for a host
+- *agimo_active_requests { host = "example.com" }*: (GAUGE)the number of active requests(waiting for the upstream) for a host
 
 # Usage
 

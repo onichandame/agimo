@@ -5,7 +5,7 @@ use pingora::{
     proxy::{ProxyHttp, Session},
     upstreams::peer::HttpPeer,
 };
-use prometheus::IntCounterVec;
+use prometheus::{IntCounterVec, IntGaugeVec};
 
 use crate::queryer::{self, Queryer};
 
@@ -15,7 +15,7 @@ pub struct Interceptor {
     #[cfg(feature = "prometheus")]
     total_counter: IntCounterVec,
     #[cfg(feature = "prometheus")]
-    closed_counter: IntCounterVec,
+    active_gauge: IntGaugeVec,
     queryer: Queryer,
     services: Config,
 }
@@ -23,12 +23,12 @@ pub struct Interceptor {
 impl Interceptor {
     #[cfg(feature = "prometheus")]
     pub fn new(prometheus_endpoint: &str, services: Config) -> Result<Self> {
-        use prometheus::{opts, register_int_counter_vec};
+        use prometheus::{opts, register_int_counter_vec, register_int_gauge_vec};
         let total_counter =
             register_int_counter_vec!(opts!("agimo_requests_total", "total requests"), &["host"])
                 .unwrap();
-        let closed_counter =
-            register_int_counter_vec!(opts!("agimo_requests_closed", "total requests"), &["host"])
+        let active_gauge =
+            register_int_gauge_vec!(opts!("agimo_active_requests", "active requests"), &["host"])
                 .unwrap();
         let queryer = {
             #[cfg(feature = "prometheus")]
@@ -36,7 +36,7 @@ impl Interceptor {
         };
         Ok(Self {
             total_counter,
-            closed_counter,
+            active_gauge,
             queryer,
             services,
         })
@@ -73,6 +73,7 @@ impl ProxyHttp for Interceptor {
         };
         ctx.service = Some(service.to_owned());
         self.total_counter.with_label_values(&[host]).inc();
+        self.active_gauge.with_label_values(&[host]).inc();
         let timeout = &service.timeout.unwrap_or(self.services.timeout);
         let Ok(_) = fast_timeout(*timeout.to_owned(), async {
             'LOOP: loop {
@@ -131,9 +132,7 @@ impl ProxyHttp for Interceptor {
         let Some(service) = &ctx.service else {
             return;
         };
-        self.closed_counter
-            .with_label_values(&[&service.host])
-            .inc();
+        self.active_gauge.with_label_values(&[&service.host]).dec();
     }
 }
 
