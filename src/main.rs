@@ -1,33 +1,32 @@
-use agimo_core::Interceptor;
-use args::CliArgs;
-use clap::Parser;
-use config::Config;
-use pingora::{proxy::http_proxy_service_with_name, server::Server, services::listening::Service};
+use counter::counter;
+use event::Event;
+use futures::{pin_mut, FutureExt};
+use probe::probe;
+use proxy_server::proxy_server;
+use scaler_server::scaler_server;
+use tokio::sync::broadcast;
 
-mod args;
+mod counter;
+mod event;
+mod externalscaler;
+mod middleware;
+mod probe;
+mod proxy_server;
+mod scaler_api;
+mod scaler_server;
 
-fn main() -> anyhow::Result<()> {
-    let args = CliArgs::parse();
-    let mut server = Server::new(None)?;
-    let services = parse_services(&args.conf)?;
-    let mut interceptor = http_proxy_service_with_name(
-        &server.configuration,
-        Interceptor::new(&args.prometheus.address, services)?,
-        "Interceptor",
-    );
-    interceptor.add_tcp(format!("0.0.0.0:{}", &args.port).as_str());
-    server.add_service(interceptor);
-    #[cfg(feature = "prometheus")]
-    {
-        let mut prom = Service::prometheus_http_service();
-        prom.add_tcp(format!("0.0.0.0:{}", &args.prometheus.exporter_port).as_str());
-        server.add_service(prom);
+#[tokio::main]
+async fn main() {
+    let (sender, _) = broadcast::channel::<Event>(100);
+    let proxy = proxy_server(sender.clone()).fuse();
+    let scaler = scaler_server(sender.clone()).fuse();
+    let counter = counter(sender.clone()).fuse();
+    let probe = probe(sender.clone()).fuse();
+    pin_mut!(proxy, scaler, counter);
+    tokio::select! {
+        _ = proxy => {},
+        _ = scaler => {},
+        _ = counter => {},
+        _ = probe => {},
     }
-    server.run_forever();
-}
-
-fn parse_services(path: &str) -> anyhow::Result<Config> {
-    let content = std::fs::read_to_string(path)?;
-    let services: Config = toml::from_str(&content)?;
-    Ok(services)
 }

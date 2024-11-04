@@ -9,13 +9,19 @@ type = ["bin"]
 members = ["config", "core"]
 
 [dependencies]
-agimo_core = { version = "0.1.0", path = "core" }
 anyhow = "1.0.86"
+axum = { version = "0.7.5", features = ["ws"] }
 clap = { version = "4.5.9", features = ["derive", "env"] }
-config = { version = "0.1.0", path = "config" }
-pingora = { version = "0.2.0", features = ["proxy"] }
+futures = "0.3.30"
+k8s-openapi = { version = "0.23.0", features = ["latest"] }
+kube = { version = "0.95.0", features = ["runtime"] }
+prost = "0.13.2"
+tokio = { version = "1.40.0", features = ["full"] }
+tokio-stream = { version = "0.1.16", features = ["sync"] }
 toml = "0.8.14"
+tonic = "0.12.2"
+tonic-reflection = "0.12.2"
 
-[features]
-default = ["prometheus"]
-prometheus = ["agimo_core/prometheus"]
+[build-dependencies]
+tonic-build = "0.12.2"
+
