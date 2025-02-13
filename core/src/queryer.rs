@@ -9,6 +9,7 @@ pub(crate) struct Queryer {
 }
 
 impl Queryer {
+
     #[cfg(feature = "prometheus")]
     pub fn new(prometheus_address: &str) -> Self {
         Self {

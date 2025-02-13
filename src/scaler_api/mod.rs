@@ -6,7 +6,6 @@ use tokio_stream::wrappers::BroadcastStream;
 use tonic::{Request, Response, Status};
 
 use crate::{
-    event::Event,
     externalscaler::{
         external_scaler_server::ExternalScaler, GetMetricSpecResponse, GetMetricsRequest,
         GetMetricsResponse, IsActiveResponse, MetricSpec, MetricValue, ScaledObjectRef,

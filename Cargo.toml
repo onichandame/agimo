@@ -11,16 +11,23 @@ members = ["config", "core"]
 [dependencies]
 anyhow = "1.0.86"
 axum = { version = "0.7.5", features = ["ws"] }
+base64 = "0.22.1"
+chrono = "0.4.38"
 clap = { version = "4.5.9", features = ["derive", "env"] }
 futures = "0.3.30"
 k8s-openapi = { version = "0.23.0", features = ["latest"] }
 kube = { version = "0.95.0", features = ["runtime"] }
 prost = "0.13.2"
+redis = { version = "0.27.5", features = ["tokio-comp"] }
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
+thiserror = "2.0.3"
 tokio = { version = "1.40.0", features = ["full"] }
 tokio-stream = { version = "0.1.16", features = ["sync"] }
 toml = "0.8.14"
 tonic = "0.12.2"
 tonic-reflection = "0.12.2"
+uuid = { version = "1.11.0", features = ["v4"] }
 
 [build-dependencies]
 tonic-build = "0.12.2"
